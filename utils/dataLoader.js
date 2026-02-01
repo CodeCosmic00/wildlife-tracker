@@ -10,7 +10,6 @@ async function loadSightings() {
     if (!dataObj || !Array.isArray(dataObj.sightings)) {
       throw new Error("Invalid sightings.json format: missing sightings array");
     }
-
     return dataObj.sightings;
   } catch (err) {
     console.error("loadSightings error:", err);
