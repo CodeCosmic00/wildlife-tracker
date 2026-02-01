@@ -63,6 +63,7 @@ app.get("/api/sightings/habitat/forest", async (req, res) => {
       (s) => String(s.habitat).toLowerCase() === "forest"
     );
 
+    
     res.json({
       habitat: "forest",
       sightings: forestSightings,
