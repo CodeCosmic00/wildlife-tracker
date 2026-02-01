@@ -17,7 +17,6 @@ const { loadSightings } = require("./utils/dataLoader");
 
 const app = express();
 
-// Required for defining the public directory as static in Vercel:
 app.use(express.static(__dirname + "/public"));
 
 const port = process.env.PORT || 3000;
@@ -38,7 +37,8 @@ app.get("/api/sightings", async (req, res) => {
 app.get("/api/sightings/verified", async (req, res) => {
   try {
     const sightings = await loadSightings();
-    res.json(sightings.filter((s) => s.verified === true));
+    const verified = sightings.filter((s) => s.verified === true);
+    res.json(verified);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -48,7 +48,8 @@ app.get("/api/sightings/species-list", async (req, res) => {
   try {
     const sightings = await loadSightings();
     const names = sightings.map((s) => s.species);
-    res.json([...new Set(names)]);
+    const unique = [...new Set(names)];
+    res.json(unique);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -57,10 +58,16 @@ app.get("/api/sightings/species-list", async (req, res) => {
 app.get("/api/sightings/habitat/forest", async (req, res) => {
   try {
     const sightings = await loadSightings();
-    const forest = sightings.filter(
+
+    const forestSightings = sightings.filter(
       (s) => String(s.habitat).toLowerCase() === "forest"
     );
-    res.json({ habitat: "forest", sightings: forest, count: forest.length });
+
+    res.json({
+      habitat: "forest",
+      sightings: forestSightings,
+      count: forestSightings.length
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -69,9 +76,11 @@ app.get("/api/sightings/habitat/forest", async (req, res) => {
 app.get("/api/sightings/search/eagle", async (req, res) => {
   try {
     const sightings = await loadSightings();
+
     const found = sightings.find((s) =>
       String(s.species).toLowerCase().includes("eagle")
     );
+
     res.json(found || { message: "No eagle sightings found" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -81,10 +90,15 @@ app.get("/api/sightings/search/eagle", async (req, res) => {
 app.get("/api/sightings/find-index/moose", async (req, res) => {
   try {
     const sightings = await loadSightings();
+
     const index = sightings.findIndex(
       (s) => String(s.species).toLowerCase() === "moose"
     );
-    res.json({ index, sighting: index >= 0 ? sightings[index] : null });
+
+    res.json({
+      index,
+      sighting: index >= 0 ? sightings[index] : null
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -93,6 +107,7 @@ app.get("/api/sightings/find-index/moose", async (req, res) => {
 app.get("/api/sightings/recent", async (req, res) => {
   try {
     const sightings = await loadSightings();
+
     const recent3 = [...sightings]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 3)
