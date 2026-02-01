@@ -3,17 +3,17 @@ const path = require("path");
 
 async function loadSightings() {
   try {
-    const filePath = path.join(__dirname, "..", "sightings.json");
+    const filePath = path.join(__dirname, "..", "data", "sightings.json");
     const dataString = await fs.promises.readFile(filePath, "utf-8");
     const dataObj = JSON.parse(dataString);
 
     if (!dataObj || !Array.isArray(dataObj.sightings)) {
-      throw new Error("Invalid sightings.json: missing sightings array");
+      throw new Error("Invalid sightings.json format: missing sightings array");
     }
 
     return dataObj.sightings;
   } catch (err) {
-    console.error(err);
+    console.error("loadSightings error:", err);
     throw new Error("Failed to load sightings data.");
   }
 }
