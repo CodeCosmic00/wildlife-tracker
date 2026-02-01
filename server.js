@@ -6,97 +6,108 @@
 *
 * https://www.senecapolytechnic.ca/about/policies/academic-integrity-policy.html
 *
-* Name: Sandesh Adhikari  Student ID: 189503238  Date: 2026-01-31
+* Name: Sandesh Adhikari Student ID: 189503238 Date: 2026-02-01
 *
 ********************************************************************************/
 
 require("dotenv").config();
-
 const express = require("express");
 const path = require("path");
 const { loadSightings } = require("./utils/dataLoader");
 
 const app = express();
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
+// Required for defining the public directory as static in Vercel:
+app.use(express.static(__dirname + "/public"));
 
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-// Root route
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "index.html"));
 });
 
-// GET all sightings
 app.get("/api/sightings", async (req, res) => {
-  const data = await loadSightings();
-  res.json(data);
+  try {
+    const sightings = await loadSightings();
+    res.json(sightings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// GET verified sightings
 app.get("/api/sightings/verified", async (req, res) => {
-  const data = await loadSightings();
-  res.json(data.filter(s => s.verified === true));
+  try {
+    const sightings = await loadSightings();
+    res.json(sightings.filter((s) => s.verified === true));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// GET unique species list
 app.get("/api/sightings/species-list", async (req, res) => {
-  const data = await loadSightings();
-  const species = [...new Set(data.map(s => s.species))];
-  res.json(species);
+  try {
+    const sightings = await loadSightings();
+    const names = sightings.map((s) => s.species);
+    res.json([...new Set(names)]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// GET forest habitat sightings
 app.get("/api/sightings/habitat/forest", async (req, res) => {
-  const data = await loadSightings();
-  const forest = data.filter(s => s.habitat === "forest");
-
-  res.json({
-    habitat: "forest",
-    sightings: forest,
-    count: forest.length
-  });
+  try {
+    const sightings = await loadSightings();
+    const forest = sightings.filter(
+      (s) => String(s.habitat).toLowerCase() === "forest"
+    );
+    res.json({ habitat: "forest", sightings: forest, count: forest.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Search for eagle
 app.get("/api/sightings/search/eagle", async (req, res) => {
-  const data = await loadSightings();
-  const found = data.find(s =>
-    s.species.toLowerCase().includes("eagle")
-  );
-
-  found
-    ? res.json(found)
-    : res.status(404).json({ error: "No eagle found" });
+  try {
+    const sightings = await loadSightings();
+    const found = sightings.find((s) =>
+      String(s.species).toLowerCase().includes("eagle")
+    );
+    res.json(found || { message: "No eagle sightings found" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Find index of moose
 app.get("/api/sightings/find-index/moose", async (req, res) => {
-  const data = await loadSightings();
-  const index = data.findIndex(s => s.species === "Moose");
-
-  index !== -1
-    ? res.json({ index, sighting: data[index] })
-    : res.status(404).json({ error: "Moose not found" });
+  try {
+    const sightings = await loadSightings();
+    const index = sightings.findIndex(
+      (s) => String(s.species).toLowerCase() === "moose"
+    );
+    res.json({ index, sighting: index >= 0 ? sightings[index] : null });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Get 3 most recent sightings
 app.get("/api/sightings/recent", async (req, res) => {
-  const data = await loadSightings();
+  try {
+    const sightings = await loadSightings();
+    const recent3 = [...sightings]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 3)
+      .map((s) => ({
+        id: s.id,
+        species: s.species,
+        habitat: s.habitat,
+        date: s.date,
+        verified: s.verified
+      }));
 
-  const recent = [...data]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 3)
-    .map(s => ({
-      species: s.species,
-      habitat: s.habitat,
-      date: s.date
-    }));
-
-  res.json(recent);
+    res.json(recent3);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.listen(PORT, () =>
-  console.log(`Server running on port ${PORT}`)
-);
+app.listen(port, () => console.log(`App listening on port ${port}`));
